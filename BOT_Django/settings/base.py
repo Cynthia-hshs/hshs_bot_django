@@ -16,6 +16,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # 自定义应用
     'good_events',
+    'users',
 ]
 
 MIDDLEWARE = [
