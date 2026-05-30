@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>好事花生</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            background: linear-gradient(135deg, #fce4b8 0%, #f8d5a3 50%, #f0c27a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 装饰：飘落的花生 */
+        .peanut {
+            position: absolute;
+            font-size: 2rem;
+            user-select: none;
+            opacity: 0.3;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10vh) rotate(0deg);
+                opacity: 0.4;
+            }
+            100% {
+                transform: translateY(110vh) rotate(720deg);
+                opacity: 0.1;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 60px 80px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.5);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(4px);
+        }
+
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            color: #8b4513;
+            margin-bottom: 12px;
+            letter-spacing: 6px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: #a0522d;
+            letter-spacing: 4px;
+            margin-bottom: 8px;
+        }
+
+        .divider {
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #d4a373, transparent);
+            margin: 20px auto;
+        }
+
+        .wish {
+            font-size: 1.6rem;
+            color: #d2691e;
+            font-weight: bold;
+            letter-spacing: 2px;
+            line-height: 1.6;
+        }
+
+        .wish em {
+            font-style: normal;
+            display: inline-block;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        footer {
+            margin-top: 24px;
+            font-size: 0.85rem;
+            color: #b8a088;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 飘落花生装饰 -->
+    <div class="peanut" style="left: 5%; animation-duration: 8s; animation-delay: 0s;">🥜</div>
+    <div class="peanut" style="left: 25%; animation-duration: 10s; animation-delay: 2s;">🥜</div>
+    <div class="peanut" style="left: 45%; animation-duration: 7s; animation-delay: 4s;">🥜</div>
+    <div class="peanut" style="left: 65%; animation-duration: 11s; animation-delay: 1s;">🥜</div>
+    <div class="peanut" style="left: 85%; animation-duration: 9s; animation-delay: 3s;">🥜</div>
+
+    <div class="card">
+        <span class="icon">🥜</span>
+        <h1>好事花生</h1>
+        <p class="subtitle">🥜 · 🎋 · 🌸</p>
+        <div class="divider"></div>
+        <p class="wish"><em>祝你好事发生！</em></p>
+        <footer>✦ 愿你每一天都有好事「花生」 ✦</footer>
+    </div>
+</body>
+</html>
