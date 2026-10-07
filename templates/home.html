@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}主页 - 好事花生{% endblock %}
+
+{% block content %}
+<main class="main">
+    <section class="card hero">
+        <span class="icon">🥜</span>
+        <h1>好事花生</h1>
+        <p class="sub">🥜 · 🎋 · 🌸</p>
+        {% if guest_name %}
+            <p class="greeting">欢迎你，<strong>{{ guest_name }}</strong></p>
+        {% else %}
+            <p class="greeting">祝你好事发生！</p>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero {
+        padding: 72px 56px;
+    }
+
+    .hero .sub {
+        margin-bottom: 28px;
+        letter-spacing: 8px;
+    }
+
+    .greeting {
+        color: var(--caramel-dark);
+        font-size: 1.05rem;
+        line-height: 1.8;
+    }
+
+    .greeting strong {
+        color: var(--caramel);
+    }
+</style>
+{% endblock %}

@@ -228,6 +228,32 @@
             opacity: 0.85;
         }
 
+        .btn-guest {
+            width: 100%;
+            padding: 12px;
+            margin-top: 12px;
+            border: 2px solid #e8d5c4;
+            border-radius: 12px;
+            background: transparent;
+            color: #c4956a;
+            font-family: inherit;
+            font-size: 1rem;
+            letter-spacing: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-guest:hover {
+            border-color: #d4a373;
+            background: #fefcf9;
+        }
+
+        .guest-hint {
+            margin-top: 10px;
+            font-size: 0.78rem;
+            color: #c8b8a8;
+        }
+
         .login-links {
             margin-top: 20px;
             display: flex;
@@ -291,6 +317,12 @@
                 </div>
                 <button type="submit" class="btn-login">登 录</button>
             </form>
+
+            <form method="post" action="{% url 'users:guest_login' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-guest">游客登录</button>
+            </form>
+            <p class="guest-hint">无需注册 · 退出即消失</p>
 
             <div class="login-links">
                 <a href="/register/">没有账号？注册</a>

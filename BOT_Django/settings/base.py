@@ -34,13 +34,16 @@ ROOT_URLCONF = 'BOT_Django.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # 项目级模板目录：base.html 与全站页面放这里
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # 把游客身份注入所有模板，模板里直接写 {{ guest_name }} 即可
+                'users.context_processors.guest',
             ],
         },
     },
@@ -74,6 +77,8 @@ USE_TZ = True
 STATIC_URL = 'static/'
 # collectstatic 的输出目录，由 Nginx 的 location /static/ 直接伺服
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+# 项目级静态资源目录（公共 CSS 等），collectstatic 时会收集到 STATIC_ROOT
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

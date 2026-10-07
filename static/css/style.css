@@ -1,0 +1,307 @@
+/* ============================================================
+   好事花生 · 公共样式
+   所有页面共用。页面专属样式写在各自模板的 {% block extra_css %} 里。
+   ============================================================ */
+
+/* ── 变量 ─────────────────────────────────────────────── */
+:root {
+    --brown:        #8b4513;
+    --caramel:      #d4a373;
+    --caramel-dark: #c4956a;
+    --muted:        #b8a088;
+    --faint:        #c8b8a8;
+    --border:       #e8d5c4;
+    --cream:        #fefcf9;
+    --card-bg:      rgba(255, 255, 255, 0.95);
+    --shadow:       0 20px 60px rgba(0, 0, 0, 0.15);
+    --shadow-sm:    0 8px 28px rgba(139, 69, 19, 0.1);
+    --radius:       24px;
+    --radius-sm:    12px;
+}
+
+/* ── 基础 ─────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: linear-gradient(135deg, #fce4b8 0%, #f8d5a3 50%, #f0c27a 100%);
+    background-attachment: fixed;
+    color: var(--brown);
+}
+
+/* ── 顶部导航（全站唯一一份）───────────────────────────── */
+.nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    height: 64px;
+    padding: 0 32px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 16px rgba(139, 69, 19, 0.08);
+}
+
+.nav-brand {
+    font-size: 1.1rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: var(--brown);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.nav-links {
+    display: flex;
+    flex: 1;
+    gap: 6px;
+}
+
+.nav-links a {
+    padding: 8px 16px;
+    border-radius: 10px;
+    color: var(--caramel-dark);
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: background 0.25s, color 0.25s;
+}
+
+.nav-links a:hover {
+    background: var(--cream);
+    color: var(--brown);
+}
+
+.nav-links a.active {
+    background: var(--cream);
+    color: var(--brown);
+    font-weight: bold;
+}
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+}
+
+.nav-name {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--caramel-dark);
+}
+
+.nav-btn {
+    display: inline-block;
+    padding: 8px 20px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--caramel-dark);
+    font-family: inherit;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 0.25s, color 0.25s, opacity 0.25s;
+}
+
+.nav-btn:hover {
+    border-color: var(--caramel);
+    color: var(--brown);
+}
+
+.nav-btn-primary {
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--caramel), var(--caramel-dark));
+    color: #fff;
+}
+
+.nav-btn-primary:hover {
+    color: #fff;
+    opacity: 0.85;
+}
+
+/* ── 页面容器 ─────────────────────────────────────────── */
+.main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+}
+
+/* 内容垂直居中的页面（登录页等）用这个 */
+.main-centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 64px);
+    padding: 40px 24px;
+}
+
+/* ── 卡片 ─────────────────────────────────────────────── */
+.card {
+    padding: 48px 56px;
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.card-narrow {
+    width: 420px;
+    max-width: 100%;
+    padding: 44px 48px;
+}
+
+.card .icon {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 3rem;
+}
+
+.card h1 {
+    font-size: 1.8rem;
+    letter-spacing: 4px;
+    color: var(--brown);
+}
+
+.card h2 {
+    font-size: 1.6rem;
+    color: var(--brown);
+}
+
+.card .sub {
+    margin-bottom: 30px;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+/* 页面标题（示例页用） */
+.page-title {
+    margin-bottom: 8px;
+    font-size: 1.7rem;
+    color: var(--brown);
+}
+
+.page-desc {
+    margin-bottom: 32px;
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+/* ── 表单 ─────────────────────────────────────────────── */
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--brown);
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--cream);
+    font-family: inherit;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+    border-color: var(--caramel);
+}
+
+/* ── 按钮 ─────────────────────────────────────────────── */
+.btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 1rem;
+    letter-spacing: 4px;
+    cursor: pointer;
+    transition: opacity 0.3s, border-color 0.3s, background 0.3s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--caramel), var(--caramel-dark));
+    color: #fff;
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    opacity: 0.85;
+}
+
+.btn-ghost {
+    margin-top: 12px;
+    border: 2px solid var(--border);
+    background: transparent;
+    color: var(--caramel-dark);
+}
+
+.btn-ghost:hover {
+    border-color: var(--caramel);
+    background: var(--cream);
+}
+
+/* ── 底部链接行 ───────────────────────────────────────── */
+.links {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    font-size: 0.9rem;
+}
+
+.links a {
+    color: var(--caramel-dark);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.links a:hover {
+    color: var(--brown);
+    text-decoration: underline;
+}
+
+/* ── 窄屏 ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .nav {
+        gap: 12px;
+        padding: 0 16px;
+    }
+
+    .nav-links a {
+        padding: 8px 10px;
+        font-size: 0.85rem;
+    }
+
+    .nav-brand {
+        font-size: 0.95rem;
+        letter-spacing: 0;
+    }
+
+    .card {
+        padding: 36px 24px;
+    }
+
+    .main {
+        padding: 32px 16px 64px;
+    }
+}
