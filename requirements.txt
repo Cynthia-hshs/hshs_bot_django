@@ -1,8 +1,15 @@
-# 生成方式：本地 pip list 对照 INSTALLED_APPS 实际用到的包
-# 服务器上安装：pip install -r requirements.txt
+# 好事花生 · 依赖清单
+# 安装：pip install -r requirements.txt
+#
+# ⚠️ 这里刻意不钉版本。
+#    原因：服务器 Python 低于 3.12，而 Django 6.x 要求 Python >= 3.12，
+#    钉 Django==6.0.5 会直接装不上。不钉版本的话 pip 会自动挑一个与当前
+#    Python 兼容的最新版，本地和服务器都能装。
+#
+#    代价：本地和线上可能装到不同的 Django 版本，而且不会报错。
+#    建议每次部署后查一下服务器实际装的是哪个版本，心里有数：
+#        venv/bin/pip show django | grep -i version
 
-Django==6.0.5
-python-dotenv==1.2.2
-
-# gunicorn 只跑在服务器上，本地没装，版本待服务器上 `pip show gunicorn` 确认后钉死
+Django
+python-dotenv
 gunicorn
