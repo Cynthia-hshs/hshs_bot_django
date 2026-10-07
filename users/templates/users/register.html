@@ -165,6 +165,7 @@
         <p class="sub">注册新账号</p>
 
         <form method="post">
+            {% csrf_token %}
             <div class="form-group">
                 <label for="email">邮箱</label>
                 <div class="input-row">

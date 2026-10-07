@@ -130,6 +130,7 @@
         <p class="sub">登录你的花生账号</p>
 
         <form method="post">
+            {% csrf_token %}
             <div class="form-group">
                 <label for="username">花生号</label>
                 <input type="text" id="username" name="username" placeholder="请输入花生号" />
