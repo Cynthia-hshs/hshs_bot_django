@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     # 自定义应用
     'good_events',
     'users',
+    'games',
 ]
 
 MIDDLEWARE = [

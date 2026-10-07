@@ -19,6 +19,8 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # 小游戏：/games/ 列表、/games/<slug>/ 播放页
+    path('games/', include('games.urls')),
     path('', include('good_events.urls')),
     path('', include('users.urls')),
 ]

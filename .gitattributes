@@ -1,0 +1,34 @@
+# Unity WebGL 打包产物（static/games/<slug>/Build/）必须原样存取。
+# 这台仓库开了 core.autocrlf=true，不声明的话 git 会尝试对它们做换行转换 ——
+# wasm/data 靠 NUL 字节能被自动判定为二进制，但 Emscripten 生成的 JS 是纯文本，
+# 一旦被 CRLF 化就改了产物内容。显式钉死，不依赖自动探测。
+#
+# 只声明这些，故意不写 `* text=auto` —— 文本文件的换行交给已有的 core.autocrlf 处理，
+# 在这里再加一条全局规则只会让下次提交多出一堆无谓的重归一化 diff。
+#
+# 路径写全 `static/games/*/Build/` 而不是裸 `*.wasm` / `*.data`：`.data` 是个很泛的
+# 扩展名，裸模式会把别处同名的普通文件也拖进 LFS，留下一堆莫名其妙的指针文件。
+#
+# ── 为什么 wasm / data / unityweb 走 Git LFS ─────────────────────────────
+# 这些是二进制，而且每次重新导出都是全量变化，git 对它们几乎不做跨版本增量：
+# 直接入库 = 每个版本永久多占一份（本款 ~23MB），仓库只增不减，clone 越来越慢。
+# 交给 LFS 之后主仓库里只留 130 字节的指针，.git 不随游戏数量和重导出次数增长。
+# GitHub 免费额度：10GiB 存储 + 10GiB/月流量，按 23MB/版本算够存几百个版本。
+#
+# *.unityweb 是 Unity【压缩导出】时的产物后缀（WebGL.wasm.unityweb / WebGL.data.unityweb
+# 这种）。当前这款是未压缩导出，用不上这条。之所以提前钉死：压缩产物本身已经压过了，
+# git 连 delta 都做不了，漏进主仓库是最坏的情况 —— 不能指望「以后记得回来加」。
+# 注意 Unity 的压缩产物还会连带让 nginx 那条 wasm MIME 规则失效（见 CLAUDE.md）。
+#
+# ⚠️ 代价：服务器上没装 git-lfs 的话，git pull 会把指针文件当正文写进工作区，
+#    collectstatic 照拷不误 —— 结果是游戏页白屏而全链路没有任何报错。
+#    deploy.sh 里有两道校验兜这个，别删。改这里的后缀清单时，
+#    deploy.sh 里 lfs_pointers() 的 glob 要同步改，否则新后缀的指针会漏检。
+static/games/*/Build/*.wasm     filter=lfs diff=lfs merge=lfs -text
+static/games/*/Build/*.data     filter=lfs diff=lfs merge=lfs -text
+static/games/*/Build/*.unityweb filter=lfs diff=lfs merge=lfs -text
+
+# 这两个是 Emscripten 生成的纯文本，体积小（本款 362KB / 20KB）且 delta 压缩效果好，
+# 留在普通 git 里就够 —— 塞进 LFS 只会多占配额，还平白多一份「指针文件」的失败模式。
+static/games/*/Build/*.framework.js -text
+static/games/*/Build/*.loader.js    -text

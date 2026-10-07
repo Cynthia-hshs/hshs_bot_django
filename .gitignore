@@ -14,9 +14,19 @@ db.sqlite3
 .vscode/
 .claude/
 
+# Claude Code 的项目说明书 —— 只服务于本地开发，不算项目内容。
+# 注意：运维知识不靠它传递。LFS 的规则和服务器要求都写在 .gitattributes
+# 和 deploy.sh 的注释里，那两个是必须入库的，别一起漏掉。
+CLAUDE.md
+
 # 环境变量（敏感信息）
 .env
 
 # 系统文件
 *.xlsx
 *.log
+
+# collectstatic 的输出目录（由 nginx 伺服）。
+# 本地跑一遍 collectstatic 就会生成一份 23MB 的 static/ 副本，
+# 不忽略的话一次 git add -A 就把同一批游戏文件重复提交进去了。
+staticfiles/

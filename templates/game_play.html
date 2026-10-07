@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ game.title }} - 好事花生{% endblock %}
+
+{% block extra_css %}
+    {% comment %}
+    必须用 link 引，不能把内容贴进 <style>：那份 CSS 里的 url('unity-logo-dark.png')
+    等 6 张图是相对路径，CSS 相对 URL 的基准是样式表自身的 URL。
+    link 进来基准是 /static/games/<slug>/TemplateData/（正确）；
+    贴进 <style> 基准会变成文档 URL /games/<slug>/，6 张图全 404。
+    {% endcomment %}
+    <link rel="stylesheet" href="{% static game.template_data %}/style.css" />
+    <style>
+        /* ── 把 Unity 的「独占整页」布局改成能嵌进站点 ──────────────────
+           Unity 默认模板的 #unity-container 是绝对居中定位（left/top 50% + translate），
+           直接搬进带顶部导航的页面会飘。这里覆盖成正常流式排布。
+
+           容器上的 unity-desktop / unity-mobile class 已经去掉了，所以
+           `#unity-container.unity-desktop {...}` 那条规则根本不匹配，
+           下面这条同样特异性(1,0,0) + 源顺序在后就能赢，不需要 !important。
+
+           position 必须是 relative，不能是 static：加载条和 warning banner 靠
+           最近定位祖先居中，改成 static 它们会跑到视口正中、被 sticky 的导航盖住。 */
+        #unity-container {
+            position: relative;
+            width: 100%;
+            max-width: 960px;
+            /* 顶部这 32px 原本是 .page-desc 的 margin-bottom 撑出来的，
+               描述文字删掉之后改挂在这里，否则画布会贴到标题上。 */
+            margin: 32px auto 0;
+        }
+
+        #unity-canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            /* 显式写死比例，不依赖 canvas 固有尺寸 + height:auto 的浏览器行为 */
+            aspect-ratio: 960 / 600;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* 页脚里全是 float，自身不建立 BFC，高度会塌陷成 0，
+           浮动的 logo 会压到后面的元素上（原页面下面没东西所以看不出来） */
+        #unity-footer::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ── 返回列表 ────────────────────────────────────────────────
+           播放页原本是个「死胡同」：全站导航里那个「小游戏」读起来像栏目名，
+           不像返回按钮，进了游戏之后没有明确的出口。这里补一个。
+           样式先放在页面专属块里 —— 目前只有这一页用，等第二页也要的时候
+           再按约定提到 static/css/style.css。 */
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: var(--caramel-dark);
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: color 0.25s;
+        }
+
+        .back-link:hover {
+            color: var(--brown);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<main class="main">
+    <a class="back-link" href="{% url 'games:index' %}">← 返回游戏列表</a>
+    <h1 class="page-title">{{ game.title }}</h1>
+
+    {# DOM 结构照搬 Unity 默认模板。注意 class="unity-desktop" 是故意去掉的，原因见上面 CSS #}
+    <div id="unity-container">
+        <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
+        <div id="unity-loading-bar">
+            <div id="unity-logo"></div>
+            <div id="unity-progress-bar-empty">
+                <div id="unity-progress-bar-full"></div>
+            </div>
+        </div>
+        <div id="unity-warning"></div>
+        <div id="unity-footer">
+            <div id="unity-webgl-logo"></div>
+            <div id="unity-fullscreen-button"></div>
+            <div id="unity-build-title">{{ game.title }}</div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Unity WebGL 加载器，由 Unity 默认模板的 index.html 改写而来。三处刻意的改动：
+    //
+    //  1. 所有路径都用 Django 的 static 模板标签拼成绝对路径。Unity 的 loader 内部是
+    //     new URL(url, document.URL)，基准是【页面 URL】/games/<slug>/ 而不是静态目录，
+    //     照搬原来的相对路径 "Build" 会打到 Django 路由上变成 404。
+    //  2. 去掉移动端分支。它会把容器换成 position:fixed; 100%x100%，
+    //     盖住顶部导航且没有返回入口。统一用 CSS 自适应画布，小屏靠全屏按钮。
+    //  3. 去掉 canvas 的固定行内尺寸（canvas.style.width = "960px" 那种）。
+    //     行内样式 CSS 覆盖不掉，删了才能让上面的 width:100% 生效。
+    (function () {
+        var canvas = document.getElementById("unity-canvas");
+        var loadingBar = document.getElementById("unity-loading-bar");
+        var progressBarFull = document.getElementById("unity-progress-bar-full");
+        var fullscreenButton = document.getElementById("unity-fullscreen-button");
+        var warningBanner = document.getElementById("unity-warning");
+
+        // 临时提示条，几秒后自动消失；type=='error' 时是常驻的红色错误条
+        function unityShowBanner(msg, type) {
+            function updateBannerVisibility() {
+                warningBanner.style.display = warningBanner.children.length ? "block" : "none";
+            }
+            var div = document.createElement("div");
+            div.innerHTML = msg;
+            warningBanner.appendChild(div);
+            if (type == "error") {
+                div.style = "background: red; padding: 10px;";
+            } else {
+                if (type == "warning") {
+                    div.style = "background: yellow; padding: 10px;";
+                }
+                setTimeout(function () {
+                    warningBanner.removeChild(div);
+                    updateBannerVisibility();
+                }, 5000);
+            }
+            updateBannerVisibility();
+        }
+
+        var buildUrl = "{% static game.build_dir %}";
+        var buildName = "{{ game.build_prefix }}";
+        var config = {
+            dataUrl: buildUrl + "/" + buildName + ".data",
+            frameworkUrl: buildUrl + "/" + buildName + ".framework.js",
+            codeUrl: buildUrl + "/" + buildName + ".wasm",
+            streamingAssetsUrl: "{% static game.streaming_assets %}",
+            companyName: "DefaultCompany",
+            productName: "{{ game.title }}",
+            productVersion: "{{ game.version }}",
+            showBanner: unityShowBanner,
+        };
+
+        loadingBar.style.display = "block";
+
+        var script = document.createElement("script");
+        script.src = buildUrl + "/" + buildName + ".loader.js";
+        script.onload = function () {
+            createUnityInstance(canvas, config, function (progress) {
+                progressBarFull.style.width = 100 * progress + "%";
+            }).then(function (unityInstance) {
+                loadingBar.style.display = "none";
+                fullscreenButton.onclick = function () {
+                    unityInstance.SetFullscreen(1);
+                };
+            }).catch(function (message) {
+                unityShowBanner(message, "error");
+            });
+        };
+        document.body.appendChild(script);
+    })();
+</script>
+{% endblock %}

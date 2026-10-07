@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400" role="img" aria-label="合成一只白色QvQ 的封面占位图">
+  <!-- 列表页的方形占位封面。想换成真截图，直接拿等尺寸（方形）图片替换本文件即可，
+       模板那边不用改 —— 网格用的是 aspect-ratio:1/1 + object-fit:cover，非方形图也能自动裁切。 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fce4b8"/>
+      <stop offset="50%" stop-color="#f8d5a3"/>
+      <stop offset="100%" stop-color="#f0c27a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="43%" r="55%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity=".95"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="400" height="400" fill="url(#bg)"/>
+  <circle cx="200" cy="172" r="132" fill="url(#glow)"/>
+
+  <!-- 背景飘着的小气泡，呼应「合成」 -->
+  <circle cx="70" cy="92" r="26" fill="#ffffff" opacity=".45"/>
+  <circle cx="332" cy="118" r="18" fill="#ffffff" opacity=".35"/>
+  <circle cx="94" cy="318" r="16" fill="#ffffff" opacity=".3"/>
+  <circle cx="320" cy="302" r="30" fill="#ffffff" opacity=".4"/>
+
+  <!-- 主角：一只圆滚滚的白色 QvQ -->
+  <circle cx="200" cy="172" r="84" fill="#ffffff"/>
+  <circle cx="200" cy="172" r="84" fill="none" stroke="#d4a373" stroke-width="4" opacity=".55"/>
+  <circle cx="172" cy="158" r="9" fill="#8b4513"/>
+  <circle cx="228" cy="158" r="9" fill="#8b4513"/>
+  <path d="M186 192 q14 16 28 0" fill="none" stroke="#8b4513" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="146" cy="188" r="11" fill="#d4a373" opacity=".45"/>
+  <circle cx="254" cy="188" r="11" fill="#d4a373" opacity=".45"/>
+
+  <text x="200" y="334" text-anchor="middle"
+        font-family="'Microsoft YaHei','PingFang SC',sans-serif"
+        font-size="36" font-weight="bold" fill="#8b4513" letter-spacing="2">QvQ</text>
+</svg>

@@ -16,8 +16,9 @@
         <nav class="nav-links">
             <a href="{% url 'good_events:home' %}"
                class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">主页</a>
-            <a href="{% url 'good_events:page1' %}"
-               class="{% if request.resolver_match.url_name == 'page1' %}active{% endif %}">示例一</a>
+            {# 「小游戏」下有两个页面（列表页和播放页），所以按 app_name 判断高亮 #}
+            <a href="{% url 'games:index' %}"
+               class="{% if request.resolver_match.app_name == 'games' %}active{% endif %}">小游戏</a>
             <a href="{% url 'good_events:page2' %}"
                class="{% if request.resolver_match.url_name == 'page2' %}active{% endif %}">示例二</a>
             <a href="{% url 'good_events:page3' %}"
@@ -40,6 +41,9 @@
 
     <!-- ===== 页面内容 ===== -->
     {% block content %}{% endblock %}
+
+    <!-- ===== 页面专属脚本（Unity 加载器之类）===== -->
+    {% block extra_js %}{% endblock %}
 
 </body>
 </html>
