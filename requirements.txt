@@ -1,0 +1,8 @@
+# 生成方式：本地 pip list 对照 INSTALLED_APPS 实际用到的包
+# 服务器上安装：pip install -r requirements.txt
+
+Django==6.0.5
+python-dotenv==1.2.2
+
+# gunicorn 只跑在服务器上，本地没装，版本待服务器上 `pip show gunicorn` 确认后钉死
+gunicorn
