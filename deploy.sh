@@ -106,6 +106,47 @@ echo "[..] Collecting static files..."
 echo "[OK] Static files collected"
 echo
 
+# -- 4.5 Prune orphaned game builds from STATIC_ROOT -------------------
+# collectstatic only ever ADDS. When a source file disappears its copy under
+# STATIC_ROOT stays behind. Game builds are content-hashed, so every re-export
+# writes a whole new set and orphans the previous one -- ~24MB per version for
+# this game alone. Nothing ever serves the orphans (the page references the
+# hashed names resolve_build() reads straight out of static/), so they just
+# pile up silently until the disk fills.
+#
+# Deliberately NOT `collectstatic --clear`: that empties STATIC_ROOT first, so
+# a failure part-way through leaves the site with no CSS at all. This only
+# ever removes files that have no source left, and only after collectstatic
+# has already put the current ones in place.
+#
+# The source side needs no pruning: git pull already deletes files the commit
+# removed, so static/games/*/Build always holds exactly one version.
+#
+# STATIC_ROOT is `staticfiles` (see BOT_Django/settings/base.py). If that
+# setting moves, this block silently stops matching and does nothing -- the
+# safe direction to fail, but orphans would start piling up again. Keep in sync.
+orphan_builds() {
+    for src in static/games/*/Build; do
+        [ -d "$src" ] || continue
+        dst="staticfiles/${src#static/}"
+        [ -d "$dst" ] || continue
+        for f in "$dst"/*; do
+            [ -e "$f" ] || continue
+            [ -e "$src/$(basename "$f")" ] || echo "$f"
+        done
+    done
+    return 0
+}
+
+orphans="$(orphan_builds)"
+if [ -n "$orphans" ]; then
+    echo "[..] Pruning orphaned game builds from STATIC_ROOT..."
+    echo "$orphans" | sed 's/^/     /'
+    echo "$orphans" | while IFS= read -r f; do rm -f "$f"; done
+    echo "[OK] Pruned $(printf '%s\n' "$orphans" | wc -l) file(s)"
+    echo
+fi
+
 # -- 5. Restart service -----------------------------------------------
 echo "[..] Restarting Gunicorn..."
 systemctl restart gunicorn
