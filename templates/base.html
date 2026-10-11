@@ -2,12 +2,14 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {# 全站只有一个 viewport meta，要再加参数的页面往 viewport_extra 里追加，别自己再写一个 #}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0{% block viewport_extra %}{% endblock %}" />
     <title>{% block title %}好事花生{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+{# body_class 给页面一个作用域钩子，游戏页靠它把「锁死滚动」之类的规则限定在自己身上 #}
+<body class="{% block body_class %}{% endblock %}">
 
     <!-- ===== 顶部导航：全站唯一一份，改动只需改这里 ===== -->
     <header class="nav">

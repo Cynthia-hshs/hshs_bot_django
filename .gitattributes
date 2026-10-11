@@ -9,13 +9,16 @@
 # 路径写全 `static/games/*/Build/` 而不是裸 `*.wasm` / `*.data`：`.data` 是个很泛的
 # 扩展名，裸模式会把别处同名的普通文件也拖进 LFS，留下一堆莫名其妙的指针文件。
 #
+# 产物文件名带哈希（Unity 的 nameFilesAsHashes：6aac017c….wasm 这种），下面几条
+# 通配规则里的 `*` 天然覆盖得到，所以换哈希名、换构建前缀都不用改这里。
+#
 # ── 为什么 wasm / data / unityweb 走 Git LFS ─────────────────────────────
 # 这些是二进制，而且每次重新导出都是全量变化，git 对它们几乎不做跨版本增量：
 # 直接入库 = 每个版本永久多占一份（本款 ~23MB），仓库只增不减，clone 越来越慢。
 # 交给 LFS 之后主仓库里只留 130 字节的指针，.git 不随游戏数量和重导出次数增长。
 # GitHub 免费额度：10GiB 存储 + 10GiB/月流量，按 23MB/版本算够存几百个版本。
 #
-# *.unityweb 是 Unity【压缩导出】时的产物后缀（WebGL.wasm.unityweb / WebGL.data.unityweb
+# *.unityweb 是 Unity【压缩导出】时的产物后缀（<hash>.wasm.unityweb / <hash>.data.unityweb
 # 这种）。当前这款是未压缩导出，用不上这条。之所以提前钉死：压缩产物本身已经压过了，
 # git 连 delta 都做不了，漏进主仓库是最坏的情况 —— 不能指望「以后记得回来加」。
 # 注意 Unity 的压缩产物还会连带让 nginx 那条 wasm MIME 规则失效（见 CLAUDE.md）。

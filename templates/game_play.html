@@ -3,91 +3,337 @@
 
 {% block title %}{{ game.title }} - 好事花生{% endblock %}
 
+{# 安全区（刘海 / 圆角 / 手势条）需要 viewport-fit=cover，追加到 base 那个唯一的 viewport meta 上 #}
+{% block viewport_extra %}, viewport-fit=cover{% endblock %}
+
+{# 这一页要铺满视口、锁死滚动，靠这个 class 把规则限定在自己身上 #}
+{% block body_class %}game-page{% endblock %}
+
 {% block extra_css %}
-    {% comment %}
-    必须用 link 引，不能把内容贴进 <style>：那份 CSS 里的 url('unity-logo-dark.png')
-    等 6 张图是相对路径，CSS 相对 URL 的基准是样式表自身的 URL。
-    link 进来基准是 /static/games/<slug>/TemplateData/（正确）；
-    贴进 <style> 基准会变成文档 URL /games/<slug>/，6 张图全 404。
-    {% endcomment %}
-    <link rel="stylesheet" href="{% static game.template_data %}/style.css" />
-    <style>
-        /* ── 把 Unity 的「独占整页」布局改成能嵌进站点 ──────────────────
-           Unity 默认模板的 #unity-container 是绝对居中定位（left/top 50% + translate），
-           直接搬进带顶部导航的页面会飘。这里覆盖成正常流式排布。
+<style>
+    /* ── 播放页外壳 ────────────────────────────────────────────────
+       刻意【不 link】TemplateData/style.css。新版那份是 Unity 的整页应用样式，
+       里面有 html,body{overflow:hidden;height:100%} 和
+       #unity-container{position:fixed;inset:0}，一旦 link 进来会作用于全站文档：
+       盖住顶部导航、锁死所有页面的滚动。
 
-           容器上的 unity-desktop / unity-mobile class 已经去掉了，所以
-           `#unity-container.unity-desktop {...}` 那条规则根本不匹配，
-           下面这条同样特异性(1,0,0) + 源顺序在后就能赢，不需要 !important。
+       也不把它贴进 <style>：那份 CSS 里的 url('xxx.png') 是相对路径，
+       而 CSS 相对 URL 的基准是样式表自身的 URL；贴进模板基准就变成页面 URL
+       /games/<slug>/，里面的图会全部 404。
 
-           position 必须是 relative，不能是 static：加载条和 warning banner 靠
-           最近定位祖先居中，改成 static 它们会跑到视口正中、被 sticky 的导航盖住。 */
-        #unity-container {
-            position: relative;
-            width: 100%;
-            max-width: 960px;
-            /* 顶部这 32px 原本是 .page-desc 的 margin-bottom 撑出来的，
-               描述文字删掉之后改挂在这里，否则画布会贴到标题上。 */
-            margin: 32px auto 0;
-        }
+       两条约束叠一起的解法就是下面这样：规则重写一遍，全部作用域限定在
+       body.game-page 下，要引图的地方用 static 标签出绝对路径，绝不用相对 url()。
+       这也是这些样式写在模板里而不是 static/css/style.css 的原因 ——
+       static 标签只在模板里能用。
 
-        #unity-canvas {
-            display: block;
-            width: 100%;
-            height: auto;
-            /* 显式写死比例，不依赖 canvas 固有尺寸 + height:auto 的浏览器行为 */
-            aspect-ratio: 960 / 600;
-            border-radius: var(--radius-sm);
-            box-shadow: var(--shadow-sm);
-        }
+       配色分两套是故意的：顶栏是站点 chrome，用站点的棕色系；
+       盖在画布上的加载条 / 提示面板用游戏自己的色板，才能和游戏融为一体。 */
 
-        /* 页脚里全是 float，自身不建立 BFC，高度会塌陷成 0，
-           浮动的 logo 会压到后面的元素上（原页面下面没东西所以看不出来） */
-        #unity-footer::after {
-            content: "";
-            display: table;
-            clear: both;
-        }
+    body.game-page {
+        /* HTML 文档里 body 的 overflow 会传播到视口，写这一条就锁死了整页滚动 */
+        overflow: hidden;
+        /* 和游戏背景同色：安全区让出来的那条边看不出接缝 */
+        background: #FFF4F7;
+    }
 
-        /* ── 返回列表 ────────────────────────────────────────────────
-           播放页原本是个「死胡同」：全站导航里那个「小游戏」读起来像栏目名，
-           不像返回按钮，进了游戏之后没有明确的出口。这里补一个。
-           样式先放在页面专属块里 —— 目前只有这一页用，等第二页也要的时候
-           再按约定提到 static/css/style.css。 */
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: var(--caramel-dark);
-            font-size: 0.9rem;
-            text-decoration: none;
-            transition: color 0.25s;
-        }
+    /* 铺满导航以下的全部高度。flex 列：顶栏 auto + 游戏容器吃掉剩余，
+       所以不用去算顶栏到底多高。
+       用 dvh 而不是 vh —— 手机地址栏收起/展开时 vh 不变，容器会跟着错位，
+       而 dvh 就是为这个场景设计的原生单位。第一行给老浏览器兜底，
+       代价只是地址栏收放时跳一下，不会崩。 */
+    body.game-page .game-main {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 64px);
+        height: calc(100dvh - 64px);
+        /* 清掉 .main 的 max-width / margin / padding：这一页要铺满，不要居中留白。
+           选择器特异性比 .main 高，窄屏媒体查询里那条 .main 也压得过，不需要 !important。 */
+        max-width: none;
+        margin: 0;
+        padding: 0;
+    }
 
-        .back-link:hover {
-            color: var(--brown);
-        }
-    </style>
+    /* 顶栏：返回入口 + 标题 + 全屏按钮，一行放下，尽量少占高度 */
+    .game-topbar {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+    }
+
+    .game-topbar .spacer {
+        flex: 1;
+    }
+
+    .game-topbar .page-title {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    /* 返回列表。播放页原本是个死胡同：全站导航里那个「小游戏」读起来像栏目名，
+       不像返回按钮。只有这一页用，所以先待在页面专属样式里。 */
+    .back-link {
+        display: inline-block;
+        margin: 0;
+        color: var(--caramel-dark);
+        font-size: 0.9rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: color 0.25s;
+    }
+
+    .back-link:hover {
+        color: var(--brown);
+    }
+
+    /* 全屏按钮。新导出的模板把整个 #unity-footer 删了（连带全屏按钮），这里补回来：
+       iPhone Safari 不支持元素全屏，但桌面和安卓上它是真有用的，删了就是砍功能。
+       图标用内联 SVG 而不是搬旧 TemplateData 里的 fullscreen-button.png ——
+       那张图新导出已经不产出，搬进来会变成一个说不清来历的孤儿文件。 */
+    #unity-fullscreen-button {
+        flex: 0 0 auto;
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border: 0;
+        border-radius: 8px;
+        background: transparent no-repeat center / 20px 20px
+            url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b4513' stroke-width='2' stroke-linecap='round'><path d='M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5'/></svg>");
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background-color 0.25s;
+    }
+
+    #unity-fullscreen-button:hover {
+        background-color: rgba(139, 69, 19, 0.1);
+    }
+
+    /* ── 游戏容器 ────────────────────────────────────────────────── */
+    /* 吃掉顶栏以下的全部高度。Unity 会按 canvas 的 client 尺寸重建渲染目标，
+       所以尺寸交给这一层就好，不用 JS 去同步。
+
+       position 必须是 relative，不能照搬新模板的 fixed：加载条和警告条靠最近的
+       定位祖先生效，改成 fixed 它们会跑到视口居中、被导航盖住。
+       （容器上也没有 unity-desktop 这个 class，就是为了躲开 Unity 模板里
+       那条绝对居中的规则。） */
+    body.game-page #unity-container {
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 0;              /* flex 子项默认不收缩，不写这条容器会被顶出视口 */
+        width: 100%;
+        box-sizing: border-box;
+        background: #FFF4F7;
+        /* 刘海 / 圆角 / 手势条。CSS 这条路一定有效；
+           C# 侧的 Screen.safeArea 在 WebGL 上有没有实现没有明确文档。 */
+        padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+                 env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    }
+
+    /* 不再锁 960/600 的固定比例 —— 这版玩法是竖屏优先的，画布要能变形去填满可用区域。
+       下面几条触摸相关的规则是手机端能不能玩的关键：不加的话横向拖动会变成页面滚动、
+       长按会弹菜单、双击会缩放，游戏根本没法玩。 */
+    body.game-page #unity-canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        outline: none;
+        background: #FFF4F7;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── 加载界面 ────────────────────────────────────────────────── */
+    body.game-page #unity-loading-bar {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: none;              /* 由 JS 打开 */
+        text-align: center;
+    }
+
+    /* 进度条两张图来自 TemplateData/。用 static 标签出绝对路径 ——
+       写成 url('progress-bar-empty-dark.png') 的话基准是页面 URL /games/<slug>/，会 404。 */
+    body.game-page #unity-progress-bar-empty {
+        width: 141px;
+        height: 18px;
+        margin: 0 auto;
+        background: url("{% static game.template_data %}/progress-bar-empty-dark.png") no-repeat center;
+    }
+
+    body.game-page #unity-progress-bar-full {
+        width: 0%;                  /* 由 JS 按加载进度改 */
+        height: 18px;
+        background: url("{% static game.template_data %}/progress-bar-full-dark.png") no-repeat center;
+    }
+
+    body.game-page #unity-progress-text {
+        margin-top: 14px;
+        font-size: 13px;
+        color: rgba(43, 43, 60, 0.55);
+    }
+
+    /* ── 警告 / 错误条 ──────────────────────────────────────────── */
+    body.game-page #unity-warning {
+        position: absolute;
+        left: 50%;
+        top: 5%;
+        transform: translateX(-50%);
+        width: min(90%, 520px);
+        border-radius: 10px;
+        overflow: hidden;
+        display: none;
+        z-index: 20;
+        font-size: 14px;
+        line-height: 1.5;
+        word-break: break-word;
+    }
+
+    /* ── 显卡上下文丢失兜底 ─────────────────────────────────────── */
+    /* Unity 内置模板完全没管这个，表现是画面卡死不动、也没有任何提示。
+       手机上多半是内存不够导致的。 */
+    body.game-page #unity-contextlost {
+        position: absolute;
+        inset: 0;
+        display: none;              /* 丢失时由 JS 改成 flex */
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 24px;
+        box-sizing: border-box;
+        text-align: center;
+        background: rgba(255, 244, 247, 0.97);
+        z-index: 40;
+    }
+
+    body.game-page #unity-contextlost p {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        color: #2B2B3C;
+    }
+
+    body.game-page #unity-contextlost p.hint {
+        font-size: 13px;
+        font-weight: 400;
+        color: rgba(43, 43, 60, 0.6);
+    }
+
+    body.game-page #unity-contextlost button {
+        margin-top: 16px;
+        padding: 13px 40px;
+        font-family: inherit;
+        font-size: 16px;
+        font-weight: 700;
+        color: #fff;
+        background: #ff5c7a;
+        border: 0;
+        border-radius: 999px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body.game-page #unity-contextlost button:active {
+        transform: scale(0.97);
+    }
+
+    /* ── 横屏提示 ────────────────────────────────────────────────── */
+    /* 手机横屏时场地只能占屏宽一小半，基本没法玩。纯 CSS 控制显示、不依赖 JS，
+       脚本加载失败时也照样会提示。 */
+    body.game-page #unity-rotate-hint {
+        position: absolute;
+        inset: 0;
+        display: none;              /* 由下面的媒体查询决定是否显示 */
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        background: #FFF4F7;
+        z-index: 30;
+    }
+
+    body.game-page #unity-rotate-hint p {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        color: #2B2B3C;
+    }
+
+    body.game-page #unity-rotate-hint .rotate-icon {
+        width: 46px;
+        height: 76px;
+        border: 4px solid #ff8fa3;
+        border-radius: 10px;
+        animation: qvq-rotate 1.6s ease-in-out infinite;
+    }
+
+    @keyframes qvq-rotate {
+        0%, 45%   { transform: rotate(90deg); }
+        55%, 100% { transform: rotate(0deg); }
+    }
+
+    /* 只在【手机】横屏时提示。加 hover:none + pointer:coarse 是为了把
+       「桌面窗口拉矮到 560 以下」排除掉 —— 否则会对一个桌面用户说
+       「请把手机竖过来玩」。带触屏但主指针是鼠标的笔记本也不会误命中。
+       保留 max-height:560 是为了排除 iPad 横屏（高 768）：那边场地虽然偏小，
+       但还玩得下去，不需要整屏挡住。 */
+    @media (orientation: landscape) and (max-height: 560px)
+           and (hover: none) and (pointer: coarse) {
+        body.game-page #unity-rotate-hint { display: flex; }
+    }
+
+    /* 尊重系统的「减弱动态效果」 */
+    @media (prefers-reduced-motion: reduce) {
+        body.game-page #unity-rotate-hint .rotate-icon { animation: none; }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<main class="main">
-    <a class="back-link" href="{% url 'games:index' %}">← 返回游戏列表</a>
-    <h1 class="page-title">{{ game.title }}</h1>
+<main class="main game-main">
+    <div class="game-topbar">
+        <a class="back-link" href="{% url 'games:index' %}">← 返回游戏列表</a>
+        <h1 class="page-title">{{ game.title }}</h1>
+        <div class="spacer"></div>
+        <button type="button" id="unity-fullscreen-button" title="全屏" aria-label="全屏"></button>
+    </div>
 
-    {# DOM 结构照搬 Unity 默认模板。注意 class="unity-desktop" 是故意去掉的，原因见上面 CSS #}
+    {% comment %}
+    相比 Unity 新导出的模板，这里去掉了 #unity-logo（上面的 h1 已经写了游戏名）、
+    #unity-webgl-logo（Unity 品牌 logo，新导出的 TemplateData 里也没这张图了）、
+    整个 #unity-footer 和 #unity-build-title（都与 h1 重复）。
+    全屏按钮挪到了顶栏，避开游戏 HUD 顶部的面板。
+
+    这条注释必须用 comment 标签而不是花括号井号 —— 后者（{# #}）不支持跨行，
+    写多行的话 Django 不会剥掉它，会原样漏进页面变成可见文本。
+    注释里这些 #xxx 字样漏出去尤其糟：浏览器会当成 CSS 选择器文本显示。
+    {% endcomment %}
     <div id="unity-container">
         <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
+
         <div id="unity-loading-bar">
-            <div id="unity-logo"></div>
             <div id="unity-progress-bar-empty">
                 <div id="unity-progress-bar-full"></div>
             </div>
+            <div id="unity-progress-text">正在加载…</div>
         </div>
+
         <div id="unity-warning"></div>
-        <div id="unity-footer">
-            <div id="unity-webgl-logo"></div>
-            <div id="unity-fullscreen-button"></div>
-            <div id="unity-build-title">{{ game.title }}</div>
+
+        <div id="unity-contextlost">
+            <p>画面被浏览器回收了</p>
+            <p class="hint">手机上通常是内存不足导致的</p>
+            <button type="button" onclick="location.reload()">重新加载</button>
+        </div>
+
+        <div id="unity-rotate-hint">
+            <div class="rotate-icon"></div>
+            <p>请把手机竖过来玩</p>
         </div>
     </div>
 </main>
@@ -95,23 +341,25 @@
 
 {% block extra_js %}
 <script>
-    // Unity WebGL 加载器，由 Unity 默认模板的 index.html 改写而来。三处刻意的改动：
+    // Unity WebGL 加载器，由新导出目录里的 index.html 改写而来。四处刻意的改动：
     //
-    //  1. 所有路径都用 Django 的 static 模板标签拼成绝对路径。Unity 的 loader 内部是
+    //  1. 四个产物路径走 static 标签出绝对路径。Unity 的 loader 内部是
     //     new URL(url, document.URL)，基准是【页面 URL】/games/<slug>/ 而不是静态目录，
-    //     照搬原来的相对路径 "Build" 会打到 Django 路由上变成 404。
-    //  2. 去掉移动端分支。它会把容器换成 position:fixed; 100%x100%，
-    //     盖住顶部导航且没有返回入口。统一用 CSS 自适应画布，小屏靠全屏按钮。
-    //  3. 去掉 canvas 的固定行内尺寸（canvas.style.width = "960px" 那种）。
-    //     行内样式 CSS 覆盖不掉，删了才能让上面的 width:100% 生效。
+    //     照搬导出里的相对路径 "Build/xxx.wasm" 会打到 Django 路由上变成 404。
+    //  2. 去掉 ServiceWorker 注册（本站不接 PWA）和 syncSize()
+    //     （容器高度交给 CSS 的 dvh，不需要 JS 去读 visualViewport）。
+    //  3. 去掉 canvas 的固定行内尺寸。行内样式 CSS 覆盖不掉，
+    //     删了上面 width/height:100% 才生效。
+    //  4. 上报错误从 alert() 改成页面内的提示条 —— 真机上弹窗像广告，中文还常常乱码。
     (function () {
         var canvas = document.getElementById("unity-canvas");
         var loadingBar = document.getElementById("unity-loading-bar");
         var progressBarFull = document.getElementById("unity-progress-bar-full");
-        var fullscreenButton = document.getElementById("unity-fullscreen-button");
         var warningBanner = document.getElementById("unity-warning");
+        var contextLostPanel = document.getElementById("unity-contextlost");
+        var fullscreenButton = document.getElementById("unity-fullscreen-button");
 
-        // 临时提示条，几秒后自动消失；type=='error' 时是常驻的红色错误条
+        // 临时提示条，几秒后自动消失；type == "error" 时是常驻的红色错误条
         function unityShowBanner(msg, type) {
             function updateBannerVisibility() {
                 warningBanner.style.display = warningBanner.children.length ? "block" : "none";
@@ -120,10 +368,10 @@
             div.innerHTML = msg;
             warningBanner.appendChild(div);
             if (type == "error") {
-                div.style = "background: red; padding: 10px;";
+                div.style = "background: #ff5570; color: #fff; padding: 10px;";
             } else {
                 if (type == "warning") {
-                    div.style = "background: yellow; padding: 10px;";
+                    div.style = "background: #ffe066; padding: 10px;";
                 }
                 setTimeout(function () {
                     warningBanner.removeChild(div);
@@ -133,12 +381,13 @@
             updateBannerVisibility();
         }
 
-        var buildUrl = "{% static game.build_dir %}";
-        var buildName = "{{ game.build_prefix }}";
+        // build.* 是 games.views.play 里 resolve_build() 扫出来的静态路径，
+        // 文件名带哈希，所以只能由后端给，不能在这里拼。
+        var loaderUrl = "{% static build.loader %}";
         var config = {
-            dataUrl: buildUrl + "/" + buildName + ".data",
-            frameworkUrl: buildUrl + "/" + buildName + ".framework.js",
-            codeUrl: buildUrl + "/" + buildName + ".wasm",
+            dataUrl:      "{% static build.data %}",
+            frameworkUrl: "{% static build.framework %}",
+            codeUrl:      "{% static build.code %}",
             streamingAssetsUrl: "{% static game.streaming_assets %}",
             companyName: "DefaultCompany",
             productName: "{{ game.title }}",
@@ -146,10 +395,29 @@
             showBanner: unityShowBanner,
         };
 
+        // 纯 2D 游戏吃不满高 DPR：手机 DPR 普遍是 3，390×844 会变成 1170×2532
+        // 约 300 万像素的渲染目标，白白发热掉帧。限到 2 是清晰度和性能的平衡点。
+        config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+
+        // 显卡上下文被系统回收。不 preventDefault 的话浏览器不会尝试恢复，
+        // 表现是画面永久卡死、而且没有任何提示。
+        canvas.addEventListener("webglcontextlost", function (e) {
+            e.preventDefault();
+            loadingBar.style.display = "none";
+            contextLostPanel.style.display = "flex";
+        }, false);
+
+        // 老版 iOS Safari 对 touch-action 的支持有历史问题，这里再拦一层。
+        // uGUI 的点击走 Unity 自己的输入、不经过 DOM 事件，所以拦这里不影响游戏内按钮。
+        document.addEventListener("touchmove", function (e) {
+            if (e.target === canvas) e.preventDefault();
+        }, { passive: false });
+        document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
+
         loadingBar.style.display = "block";
 
         var script = document.createElement("script");
-        script.src = buildUrl + "/" + buildName + ".loader.js";
+        script.src = loaderUrl;
         script.onload = function () {
             createUnityInstance(canvas, config, function (progress) {
                 progressBarFull.style.width = 100 * progress + "%";
@@ -159,6 +427,7 @@
                     unityInstance.SetFullscreen(1);
                 };
             }).catch(function (message) {
+                loadingBar.style.display = "none";
                 unityShowBanner(message, "error");
             });
         };
